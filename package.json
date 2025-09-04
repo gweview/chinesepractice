@@ -1,6 +1,6 @@
 {
   "name": "new-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "汉字练字帖生成器 - 从1000个常用汉字中选择生成米字格练字帖",
   "main": "server.js",
   "scripts": {

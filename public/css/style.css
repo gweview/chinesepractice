@@ -67,12 +67,48 @@ header p {
     align-items: center;
 }
 
+.custom-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0 6px;
+}
+
+.custom-input-row input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 2px solid #ecf0f1;
+    border-radius: 6px;
+    font-size: 15px;
+}
+
+.custom-input-row button {
+    padding: 10px 16px;
+    background: #27ae60;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.print-options {
+    margin: 8px 0 14px;
+}
+
+.print-options .checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #2c3e50;
+}
+
 .selected-char {
     background: #3498db;
     color: white;
     padding: 8px 12px;
     border-radius: 20px;
     font-size: 18px;
+    font-family: 'Kaiti SC','KaiTi','STKaiti','DFKai-SB','Kaiti','KaiTi_GB2312', serif;
     cursor: pointer;
     transition: background-color 0.3s;
     position: relative;
@@ -128,19 +164,11 @@ header p {
     font-size: 13px;
 }
 
-/* 已选字符里每个字的行数选择器 */
+/* 已选字符容器（去掉行数选择器，仅展示字符气泡） */
 .selected-char-wrap {
     display: flex;
     align-items: center;
     gap: 8px;
-}
-
-.selected-char-wrap .line-count {
-    padding: 4px 8px;
-    border: 1px solid #ecf0f1;
-    border-radius: 6px;
-    font-size: 12px;
-    cursor: pointer;
 }
 
 .action-buttons {
@@ -242,6 +270,7 @@ button:disabled {
     align-items: center;
     justify-content: center;
     font-size: 24px;
+    font-family: 'Kaiti SC','KaiTi','STKaiti','DFKai-SB','Kaiti','KaiTi_GB2312', serif;
     border: 2px solid #ecf0f1;
     border-radius: 5px;
     cursor: pointer;

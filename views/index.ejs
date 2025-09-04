@@ -19,6 +19,12 @@
                 <div class="selected-chars">
                     <h3>已选择的汉字 (<span id="selected-count">0</span>/10):</h3>
                     <div id="selected-display" class="selected-display"></div>
+                    <div class="custom-input-row">
+                        <label for="custom-input">自定义输入：</label>
+                        <input id="custom-input" type="text" maxlength="50" placeholder="直接输入要练习的字，如：春夏秋冬" autocomplete="off" />
+                        <button id="add-custom" type="button">添加到选择</button>
+                        <span class="hint">支持一次输入多个字，将按顺序加入（最多10个）</span>
+                    </div>
                     <div class="layout-options">
                         <label for="grid-size">字大小:</label>
                         <select id="grid-size">
@@ -26,7 +32,13 @@
                             <option value="medium" selected>中字（每行8个格）</option>
                             <option value="small">小字（每行10个格）</option>
                         </select>
-                        <span class="hint">每个字可设置连续打印1行或2行</span>
+                        <span class="hint">每个字固定练习 1 行</span>
+                    </div>
+                    <div class="print-options">
+                        <label class="checkbox">
+                            <input id="use-animals" type="checkbox" checked />
+                            打印页顶使用可爱动物装饰（替代标题）
+                        </label>
                     </div>
                     <div class="action-buttons">
                         <button id="clear-all" type="button">清空所有</button>

@@ -18,6 +18,9 @@ class CharacterSelector {
         this.charGrid = document.getElementById('char-grid');
         this.filterButtons = document.querySelectorAll('.filter-btn');
         this.charItems = document.querySelectorAll('.char-item');
+        this.customInput = document.getElementById('custom-input');
+        this.addCustomBtn = document.getElementById('add-custom');
+        this.useAnimalsCheckbox = document.getElementById('use-animals');
     }
 
     bindEvents() {
@@ -67,19 +70,23 @@ class CharacterSelector {
             }
         });
 
-        // 改变每个字的连续行数（1或2行）
-        this.selectedDisplay.addEventListener('change', (e) => {
-            const el = e.target;
-            if (el.classList && el.classList.contains('line-count')) {
-                const char = el.dataset.char;
-                const lines = parseInt(el.value);
-                const idx = this.selectedChars.findIndex(c => c.char === char);
-                if (idx > -1) {
-                    this.selectedChars[idx].lines = lines;
-                    this.persistState();
+        // 取消多行练字：不再提供每字行数选择
+
+        // 自定义输入：点击按钮或按回车添加
+        if (this.addCustomBtn && this.customInput) {
+            this.addCustomBtn.addEventListener('click', () => this.addCustomCharacters());
+            this.customInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.addCustomCharacters();
                 }
-            }
-        });
+            });
+        }
+
+        // 顶部装饰选项
+        if (this.useAnimalsCheckbox) {
+            this.useAnimalsCheckbox.addEventListener('change', () => this.persistState());
+        }
     }
 
     toggleCharacter(char) {
@@ -133,14 +140,7 @@ class CharacterSelector {
             charElement.textContent = item.char;
             charElement.title = '点击移除';
 
-            const lineSelect = document.createElement('select');
-            lineSelect.className = 'line-count';
-            lineSelect.dataset.char = item.char;
-            lineSelect.innerHTML = '<option value="1">1行</option><option value="2">2行</option>';
-            lineSelect.value = String(item.lines || 1);
-
             wrap.appendChild(charElement);
-            wrap.appendChild(lineSelect);
             this.selectedDisplay.appendChild(wrap);
         });
 
@@ -227,26 +227,51 @@ class CharacterSelector {
     }
 
     persistState() {
+        // 不再持久化：刷新页面即清空选择与选项
         try {
-            localStorage.setItem('selectedChars_v2', JSON.stringify(this.selectedChars));
-            if (this.gridSizeSelect) localStorage.setItem('gridSize', this.gridSizeSelect.value);
+            localStorage.removeItem('selectedChars_v2');
+            localStorage.removeItem('selectedChars');
+            localStorage.removeItem('gridSize');
+            localStorage.removeItem('useAnimals');
         } catch (_) { /* ignore */ }
     }
 
     restoreState() {
+        // 刷新即重置：清空本地存储并使用默认值
         try {
-            const savedV2 = localStorage.getItem('selectedChars_v2');
-            const savedV1 = localStorage.getItem('selectedChars');
-            if (savedV2) {
-                const arr = JSON.parse(savedV2);
-                if (Array.isArray(arr)) this.selectedChars = arr.filter(x => x && x.char);
-            } else if (savedV1) {
-                const arr = JSON.parse(savedV1);
-                if (Array.isArray(arr)) this.selectedChars = arr.map(ch => ({ char: ch, lines: 1 }));
-            }
-            const size = localStorage.getItem('gridSize');
-            if (this.gridSizeSelect && size) this.gridSizeSelect.value = size;
+            localStorage.removeItem('selectedChars_v2');
+            localStorage.removeItem('selectedChars');
+            localStorage.removeItem('gridSize');
+            localStorage.removeItem('useAnimals');
         } catch (_) { /* ignore */ }
+        this.selectedChars = [];
+        // gridSize 和 useAnimals 不从本地恢复，保持页面默认
+    }
+
+    // 将自定义输入的字逐个加入选择
+    addCustomCharacters() {
+        const val = (this.customInput?.value || '').trim();
+        if (!val) return;
+        // 提取字符（去空白和常见分隔符），逐字符处理
+        const chars = Array.from(val.replace(/[\s,.;，。、《》〈〉\-_/|\\]+/g, ''));
+        let added = 0;
+        for (const ch of chars) {
+            if (this.selectedChars.length >= this.maxSelection) break;
+            if (!ch) continue;
+            // 过滤非常规字符（保留中日韩及常用符号），避免奇怪空白
+            if (/^[\p{sc=Han}\p{N}\p{L}\p{P}]$/u.test(ch)) {
+                if (!this.selectedChars.some(c => c.char === ch)) {
+                    this.selectedChars.push({ char: ch, lines: 1 });
+                    added++;
+                }
+            }
+        }
+        if (added === 0) {
+            alert('没有可添加的新字（可能已满或重复）');
+        }
+        this.customInput.value = '';
+        this.updateUI();
+        this.persistState();
     }
 
     generatePrintHTML() {
@@ -266,48 +291,33 @@ class CharacterSelector {
             <div class="char-row" style="margin-bottom: ${charsPerRow === 1 ? '15px' : charsPerRow === 2 ? '10px' : '8px'};">
                 ${chars.map((item, charIndex) => `
                     <div class="char-section">
-                        <div class="char-info">
-                            <div class="char-number">${rowIndex * charsPerRow + charIndex + 1}</div>
+                        <div class="char-info" style="width:${gridPx}px;">
                             <div class="grid-container reference">
-                                <div class="char-example" style="font-size:${Math.round(gridPx*0.75)}px;">${item.char}</div>
+                                <div class="char-example" style="font-size:${Math.round(gridPx*0.8)}px;">${item.char}</div>
                                 <svg class="grid" width="${gridPx}" height="${gridPx}" viewBox="0 0 100 100">
-                                    <defs>
-                                        <pattern id="dots_${rowIndex}_${charIndex}" patternUnits="userSpaceOnUse" width="4" height="4">
-                                            <circle cx="2" cy="2" r="0.5" fill="#ff6b9d" opacity="0.3"/>
-                                        </pattern>
-                                    </defs>
-                                    <rect x="0" y="0" width="100" height="100" fill="none" stroke="#4ecdc4" stroke-width="2"/>
-                                    <line x1="50" y1="0" x2="50" y2="100" stroke="#ff6b9d" stroke-width="1.2" stroke-dasharray="3,2"/>
-                                    <line x1="0" y1="50" x2="100" y2="50" stroke="#ff6b9d" stroke-width="1.2" stroke-dasharray="3,2"/>
-                                    <line x1="0" y1="0" x2="100" y2="100" stroke="#45b7d1" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.6"/>
-                                    <line x1="0" y1="100" x2="100" y2="0" stroke="#45b7d1" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.6"/>
-                                    <rect x="0" y="0" width="100" height="100" fill="url(#dots_${rowIndex}_${charIndex})" opacity="0.1"/>
+                                    <rect x="0" y="0" width="100" height="100" fill="none" stroke="#444" stroke-width="1.6"/>
+                                    <line x1="50" y1="0" x2="50" y2="100" stroke="#aaa" stroke-width="0.9" stroke-dasharray="4,2"/>
+                                    <line x1="0" y1="50" x2="100" y2="50" stroke="#aaa" stroke-width="0.9" stroke-dasharray="4,2"/>
+                                    <line x1="0" y1="0" x2="100" y2="100" stroke="#ccc" stroke-width="0.7" stroke-dasharray="2,2"/>
+                                    <line x1="0" y1="100" x2="100" y2="0" stroke="#ccc" stroke-width="0.7" stroke-dasharray="2,2"/>
                                 </svg>
                             </div>
-                            <div class="char-label">示范</div>
+                            
                         </div>
                         <div class="practice-grids">
-                            ${Array(item.lines).fill(0).map((_, lineIdx) => `
-                                <div class="practice-row">
-                                    ${Array(practicePerLine).fill(0).map((_, i) => `
-                                        <div class="practice-item">
-                                            <svg class="grid" width="${gridPx}" height="${gridPx}" viewBox="0 0 100 100">
-                                                <defs>
-                                                    <pattern id="dots_${rowIndex}_${charIndex}_${lineIdx}_${i}" patternUnits="userSpaceOnUse" width="4" height="4">
-                                                        <circle cx="2" cy="2" r="0.5" fill="#96ceb4" opacity="0.2"/>
-                                                    </pattern>
-                                                </defs>
-                                                <rect x="0" y="0" width="100" height="100" fill="none" stroke="#4ecdc4" stroke-width="1.5"/>
-                                                <line x1="50" y1="0" x2="50" y2="100" stroke="#ff9ff3" stroke-width="0.8" stroke-dasharray="2,1" opacity="0.7"/>
-                                                <line x1="0" y1="50" x2="100" y2="50" stroke="#ff9ff3" stroke-width="0.8" stroke-dasharray="2,1" opacity="0.7"/>
-                                                <line x1="0" y1="0" x2="100" y2="100" stroke="#54a0ff" stroke-width="0.6" stroke-dasharray="1,1" opacity="0.4"/>
-                                                <line x1="0" y1="100" x2="100" y2="0" stroke="#54a0ff" stroke-width="0.6" stroke-dasharray="1,1" opacity="0.4"/>
-                                                <rect x="0" y="0" width="100" height="100" fill="url(#dots_${rowIndex}_${charIndex}_${lineIdx}_${i})" opacity="0.1"/>
-                                            </svg>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            `).join('')}
+                            <div class="practice-row">
+                                ${Array(practicePerLine).fill(0).map((_, i) => `
+                                    <div class="practice-item">
+                                        <svg class="grid" width="${gridPx}" height="${gridPx}" viewBox="0 0 100 100">
+                                            <rect x="0" y="0" width="100" height="100" fill="none" stroke="#444" stroke-width="1.6"/>
+                                            <line x1="50" y1="0" x2="50" y2="100" stroke="#aaa" stroke-width="0.9" stroke-dasharray="4,2" opacity="0.95"/>
+                                            <line x1="0" y1="50" x2="100" y2="50" stroke="#aaa" stroke-width="0.9" stroke-dasharray="4,2" opacity="0.95"/>
+                                            <line x1="0" y1="0" x2="100" y2="100" stroke="#ccc" stroke-width="0.7" stroke-dasharray="2,2" opacity="0.8"/>
+                                            <line x1="0" y1="100" x2="100" y2="0" stroke="#ccc" stroke-width="0.7" stroke-dasharray="2,2" opacity="0.8"/>
+                                        </svg>
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
                     </div>
                 `).join('')}
@@ -321,7 +331,7 @@ class CharacterSelector {
             <html>
             <head>
                 <meta charset="UTF-8">
-                <title>小朋友汉字练字帖</title>
+                <title>楷书练习字帖</title>
                 <style>
                     @page {
                         margin: 15mm;
@@ -331,50 +341,35 @@ class CharacterSelector {
                     body {
                         font-family: 'Microsoft YaHei', 'SimSun', serif;
                         margin: 0;
-                        padding: 0;
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        padding: 24px 24px 36px;
+                        background: #ffffff;
+                        color: #222;
                         min-height: 100vh;
                     }
                     
                     .header {
-                        background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
-                        padding: 20px;
+                        padding: 6px 0 16px;
                         text-align: center;
-                        border-radius: 20px 20px 0 0;
-                        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-                        margin-bottom: 25px;
+                        margin-bottom: 8px;
+                        border-bottom: 2px solid #eee;
                     }
                     
                     .header h1 {
-                        color: #2c3e50;
-                        font-size: 2.2em;
+                        color: #111;
+                        font-size: 1.6em;
                         margin: 0;
-                        text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 15px;
+                        font-weight: 600;
+                        letter-spacing: 0.05em;
                     }
                     
-                    .header h1::before {
-                        content: "🌟";
-                        font-size: 1.2em;
-                    }
-                    
-                    .header h1::after {
-                        content: "🌈";
-                        font-size: 1.2em;
-                    }
+                    /* Emoji decorations removed for cleaner sheet */
                     
                     .info-bar {
-                        background: linear-gradient(45deg, #a8edea 0%, #fed6e3 100%);
-                        padding: 15px 25px;
-                        border-radius: 15px;
-                        margin-bottom: 25px;
+                        padding: 6px 0 14px;
+                        margin-bottom: 8px;
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
                     }
                     
                     .student-info {
@@ -387,18 +382,15 @@ class CharacterSelector {
                         display: flex;
                         align-items: center;
                         gap: 8px;
-                        font-size: 1.1em;
-                        color: #2c3e50;
-                        font-weight: bold;
+                        font-size: 0.95em;
+                        color: #333;
+                        font-weight: 500;
                     }
                     
-                    .info-label {
-                        color: #e74c3c;
-                        font-weight: normal;
-                    }
+                    .info-label { color: #666; font-weight: normal; }
                     
                     .info-value {
-                        border-bottom: 2px solid #3498db;
+                        border-bottom: 1px solid #aaa;
                         min-width: 120px;
                         text-align: center;
                         padding: 2px 8px;
@@ -407,18 +399,11 @@ class CharacterSelector {
                     .char-row {
                         display: flex;
                         align-items: flex-start;
-                        margin-bottom: 15px;
-                        padding: 15px;
-                        background: rgba(255,255,255,0.95);
-                        border-radius: 10px;
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        margin-bottom: 12px;
+                        padding: 8px 0;
                         page-break-inside: avoid;
-                        border: 2px solid transparent;
-                        background-image: linear-gradient(rgba(255,255,255,0.95), rgba(255,255,255,0.95)), 
-                                          linear-gradient(45deg, #ff9a9e, #fecfef, #a8edea, #fed6e3);
-                        background-origin: border-box;
-                        background-clip: content-box, border-box;
                         gap: 20px;
+                        border-bottom: 1px dashed #eee;
                     }
                     
                     .char-section {
@@ -432,7 +417,7 @@ class CharacterSelector {
                         display: flex;
                         flex-direction: column;
                         align-items: center;
-                        min-width: 80px;
+                        min-width: 0;
                     }
                     
                     .char-number {
@@ -446,7 +431,7 @@ class CharacterSelector {
                         justify-content: center;
                         font-weight: bold;
                         font-size: 0.9em;
-                        margin-bottom: 5px;
+                        margin-top: 6px;
                         box-shadow: 0 2px 5px rgba(255,107,157,0.3);
                     }
                     
@@ -461,10 +446,11 @@ class CharacterSelector {
                         left: 50%;
                         transform: translate(-50%, -50%);
                         font-size: 60px;
-                        color: #2c3e50;
+                        color: #111;
                         z-index: 2;
-                        font-weight: bold;
-                        text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+                        font-weight: 500;
+                        font-family: 'Kaiti SC','KaiTi','STKaiti','DFKai-SB','Kaiti','KaiTi_GB2312', serif;
+                        text-shadow: none;
                     }
                     
                     .char-label {
@@ -488,18 +474,11 @@ class CharacterSelector {
                     
                     .grid {
                         display: block;
-                        border-radius: 5px;
-                        box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+                        border-radius: 2px;
+                        box-shadow: none;
                     }
                     
-                    .footer {
-                        background: linear-gradient(45deg, #ffecd2 0%, #fcb69f 100%);
-                        padding: 20px;
-                        border-radius: 0 0 20px 20px;
-                        margin-top: 30px;
-                        text-align: center;
-                        box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
-                    }
+                    .footer { display: none; }
                     
                     .rating-section {
                         display: flex;
@@ -541,22 +520,14 @@ class CharacterSelector {
                     }
                     
                     @media print {
-                        body {
-                            background: white !important;
-                            -webkit-print-color-adjust: exact;
-                            color-adjust: exact;
-                        }
-                        
-                        .char-row {
-                            break-inside: avoid;
-                            margin-bottom: 25px;
-                        }
+                        body { background: white !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
+                        .char-row { break-inside: avoid; margin-bottom: 14px; }
                     }
                 </style>
             </head>
             <body>
                 <div class="header">
-                    <h1>小朋友汉字练字帖</h1>
+                    <h1>楷书练习字帖</h1>
                 </div>
                 
                 <div class="info-bar">
@@ -578,36 +549,6 @@ class CharacterSelector {
                 
                 ${rowsHTML}
                 
-                <div class="footer">
-                    <div class="rating-section">
-                        <div class="rating-item">
-                            <span>📝 完成情况:</span>
-                            <div class="star-rating">
-                                <span class="star">⭐</span>
-                                <span class="star">⭐</span>
-                                <span class="star">⭐</span>
-                                <span class="star">⭐</span>
-                                <span class="star">⭐</span>
-                            </div>
-                        </div>
-                        <div class="rating-item">
-                            <span>✏️ 书写质量:</span>
-                            <div class="star-rating">
-                                <span class="star">⭐</span>
-                                <span class="star">⭐</span>
-                                <span class="star">⭐</span>
-                                <span class="star">⭐</span>
-                                <span class="star">⭐</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="encouragement">
-                        🎉 小朋友真棒！继续加油哦！ 🎉
-                    </div>
-                    <div style="margin-top: 15px; font-size: 0.9em; color: #7f8c8d;">
-                        家长签字：________________　　老师签字：________________
-                    </div>
-                </div>
             </body>
             </html>
         `;
