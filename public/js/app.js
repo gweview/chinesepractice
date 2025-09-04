@@ -325,6 +325,15 @@ class CharacterSelector {
         `).join('');
 
         const currentDate = new Date().toLocaleDateString('zh-CN');
+        const useAnimals = this.useAnimalsCheckbox ? !!this.useAnimalsCheckbox.checked : true;
+        const animals = ['🐼','🐰','🐯','🦊','🐱','🐶','🐨','🦁','🐷','🐵'];
+        // 安全生成页眉（避免转义导致的属性异常）
+        const headerInnerSafe = useAnimals
+            ? `<div class=\"animal-row\" aria-label=\"decorative animals\">${animals.map(a => '<span class=\"animal\">' + a + '</span>').join('')}</div>`
+            : `<h1>楷书练习字帖</h1>`;
+        const headerInner = useAnimals
+            ? `<div class="animal-row" aria-label="decorative animals">${animals.map(a => `<span class=\"animal\">${a}</span>`).join('')}</div>`
+            : `<h1>楷书练习字帖</h1>`;
 
         return `
             <!DOCTYPE html>
@@ -361,8 +370,19 @@ class CharacterSelector {
                         font-weight: 600;
                         letter-spacing: 0.05em;
                     }
-                    
-                    /* Emoji decorations removed for cleaner sheet */
+                    /* 可爱动物装饰（替代标题） */
+                    .animal-row {
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        gap: 10px;
+                        padding: 2px 0 4px;
+                        line-height: 1;
+                    }
+                    .animal-row .animal {
+                        font-size: 1.6em;
+                        transform: translateY(0);
+                    }
                     
                     .info-bar {
                         padding: 6px 0 14px;
@@ -526,9 +546,7 @@ class CharacterSelector {
                 </style>
             </head>
             <body>
-                <div class="header">
-                    <h1>楷书练习字帖</h1>
-                </div>
+                <div class="header">${headerInnerSafe}</div>
                 
                 <div class="info-bar">
                     <div class="student-info">
