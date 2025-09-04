@@ -305,6 +305,37 @@ button:disabled {
     display: none;
 }
 
+/* 翻页隐藏（不影响搜索与筛选的 hidden 标记） */
+.char-item.page-hidden {
+    display: none;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.pagination .page-btn {
+    padding: 6px 12px;
+    border: 2px solid #ecf0f1;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.pagination .page-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.pagination .page-info {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 10px;

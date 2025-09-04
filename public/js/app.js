@@ -6,6 +6,8 @@ class CharacterSelector {
         this.restoreState();
         this.bindEvents();
         this.updateUI();
+        // 初始应用一次分页（默认显示第1页）
+        this.applyPagination();
     }
 
     initializeElements() {
@@ -21,6 +23,12 @@ class CharacterSelector {
         this.customInput = document.getElementById('custom-input');
         this.addCustomBtn = document.getElementById('add-custom');
         this.useAnimalsCheckbox = document.getElementById('use-animals');
+
+        // 翻页控件
+        this.pagination = { page: 1, pageSize: 100 };
+        this.prevPageBtn = document.getElementById('prev-page');
+        this.nextPageBtn = document.getElementById('next-page');
+        this.pageInfo = document.getElementById('page-info');
     }
 
     bindEvents() {
@@ -52,6 +60,8 @@ class CharacterSelector {
         // 搜索功能
         this.searchInput.addEventListener('input', (e) => {
             this.filterCharacters(e.target.value);
+            this.pagination.page = 1;
+            this.applyPagination();
         });
 
         // 筛选按钮
@@ -59,6 +69,8 @@ class CharacterSelector {
             btn.addEventListener('click', (e) => {
                 this.setActiveFilter(e.target);
                 this.applyFilter(e.target.dataset.filter);
+                this.pagination.page = 1;
+                this.applyPagination();
             });
         });
 
@@ -86,6 +98,12 @@ class CharacterSelector {
         // 顶部装饰选项
         if (this.useAnimalsCheckbox) {
             this.useAnimalsCheckbox.addEventListener('change', () => this.persistState());
+        }
+
+        // 翻页按钮
+        if (this.prevPageBtn && this.nextPageBtn) {
+            this.prevPageBtn.addEventListener('click', () => this.goToPage(this.pagination.page - 1));
+            this.nextPageBtn.addEventListener('click', () => this.goToPage(this.pagination.page + 1));
         }
     }
 
@@ -205,6 +223,44 @@ class CharacterSelector {
         if (this.searchInput.value.trim()) {
             this.filterCharacters(this.searchInput.value);
         }
+    }
+
+    // 翻页：根据当前过滤后的可见项，按页显示
+    applyPagination() {
+        const items = Array.from(this.charItems);
+        // 基于过滤/搜索后的可见项（没有 hidden 类）
+        const visible = items.filter(el => !el.classList.contains('hidden'));
+        const total = visible.length;
+        const pageSize = this.pagination.pageSize;
+        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+        // 纠正越界页码
+        if (this.pagination.page > totalPages) this.pagination.page = totalPages;
+        if (this.pagination.page < 1) this.pagination.page = 1;
+        const start = (this.pagination.page - 1) * pageSize;
+        const end = start + pageSize;
+
+        // 先清理分页隐藏
+        items.forEach(el => el.classList.remove('page-hidden'));
+        // 对可见集合应用分页隐藏
+        visible.forEach((el, i) => {
+            if (i < start || i >= end) {
+                el.classList.add('page-hidden');
+            } else {
+                el.classList.remove('page-hidden');
+            }
+        });
+
+        // 更新分页控件
+        if (this.pageInfo) {
+            this.pageInfo.textContent = `第 ${this.pagination.page}/${totalPages} 页（共 ${total} 个字）`;
+        }
+        if (this.prevPageBtn) this.prevPageBtn.disabled = this.pagination.page <= 1;
+        if (this.nextPageBtn) this.nextPageBtn.disabled = this.pagination.page >= totalPages;
+    }
+
+    goToPage(page) {
+        this.pagination.page = page;
+        this.applyPagination();
     }
 
 
