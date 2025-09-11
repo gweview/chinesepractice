@@ -4,8 +4,10 @@
   "description": "汉字练字帖生成器 - 从1000个常用汉字中选择生成米字格练字帖",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
+    "start": "python3 app.py",
+    "start:flask": "python3 app.py",
+    "start:node": "node server.js",
+    "dev": "python3 app.py",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

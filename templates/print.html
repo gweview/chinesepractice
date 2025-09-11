@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>楷书练习字帖</title>
+    <style>
+        @page { margin: 15mm; size: A4; }
+        body { font-family: 'Microsoft YaHei', 'SimSun', serif; margin: 0; padding: 24px 24px 36px; background: #ffffff; color: #222; min-height: 100vh; }
+        .header { padding: 6px 0 16px; text-align: center; margin-bottom: 8px; border-bottom: 2px solid #eee; }
+        .header h1 { color: #111; font-size: 1.6em; margin: 0; font-weight: 600; letter-spacing: 0.05em; }
+        .animal-row { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 2px 0 4px; line-height: 1; }
+        .animal-row .animal { font-size: 1.6em; transform: translateY(0); }
+        .info-bar { padding: 6px 0 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .student-info { display: flex; gap: 30px; align-items: center; }
+        .info-item { display: flex; align-items: center; gap: 8px; font-size: 0.95em; color: #333; font-weight: 500; }
+        .info-label { color: #666; font-weight: normal; }
+        .info-value { border-bottom: 1px solid #aaa; min-width: 120px; text-align: center; padding: 2px 8px; }
+        .char-row { display: flex; align-items: flex-start; margin-bottom: 14px; padding: 8px 0; page-break-inside: avoid; gap: 20px; border-bottom: 1px dashed #eee; }
+        .char-section { display: flex; align-items: flex-start; gap: 8px; flex: 1; }
+        .char-info { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+        .grid-container.reference { position: relative; margin-bottom: 5px; }
+        .char-example { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #111; z-index: 2; font-weight: 500; font-family: 'Kaiti SC','KaiTi','STKaiti','DFKai-SB','Kaiti','KaiTi_GB2312', serif; text-shadow: none; }
+        .practice-grids { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+        .practice-row { display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; }
+        .practice-item { position: relative; display: flex; flex-direction: column; align-items: center; }
+        .grid { display: block; border-radius: 2px; box-shadow: none; }
+        @media print { body { background: white !important; -webkit-print-color-adjust: exact; color-adjust: exact; } .char-row { break-inside: avoid; } }
+    </style>
+</head>
+<body>
+    {% set animals = ['🐼','🐰','🐯','🦊','🐱','🐶','🐨','🦁','🐷','🐵'] %}
+    {% set sizeConfig = {
+        'large': {'gridPx': 100, 'perLine': 6},
+        'medium': {'gridPx': 80, 'perLine': 8},
+        'small': {'gridPx': 60, 'perLine': 10}
+    } %}
+    {% set config = sizeConfig.get(gridSize, sizeConfig['medium']) %}
+    {% set grid_px = config['gridPx'] %}
+    {% set practice_per_line = config['perLine'] %}
+
+    <div class="header">
+        {% if useAnimals %}
+            <div class="animal-row" aria-label="decorative animals">
+                {% for a in animals %}
+                    <span class="animal">{{ a }}</span>
+                {% endfor %}
+            </div>
+        {% else %}
+            <h1>楷书练习字帖</h1>
+        {% endif %}
+    </div>
+
+    <div class="info-bar">
+        <div class="student-info">
+            <div class="info-item">
+                <span class="info-label">👶 姓名:</span>
+                <div class="info-value"></div>
+            </div>
+            <div class="info-item">
+                <span class="info-label">📅 日期:</span>
+                <div class="info-value">{{ currentDate }}</div>
+            </div>
+            <div class="info-item">
+                <span class="info-label">🏫 班级:</span>
+                <div class="info-value"></div>
+            </div>
+        </div>
+    </div>
+
+    {% for item in selectedChars %}
+        <div class="char-row">
+            <div class="char-section">
+                <div class="char-info" style="width: {{ grid_px }}px;">
+                    <div class="grid-container reference">
+                        <div class="char-example" style="font-size: {{ (grid_px * 0.8) | int }}px;">{{ item.char }}</div>
+                        <svg class="grid" width="{{ grid_px }}" height="{{ grid_px }}" viewBox="0 0 100 100">
+                            <rect x="0" y="0" width="100" height="100" fill="none" stroke="#444" stroke-width="1.6"/>
+                            <line x1="50" y1="0" x2="50" y2="100" stroke="#aaa" stroke-width="0.9" stroke-dasharray="4,2"/>
+                            <line x1="0" y1="50" x2="100" y2="50" stroke="#aaa" stroke-width="0.9" stroke-dasharray="4,2"/>
+                            <line x1="0" y1="0" x2="100" y2="100" stroke="#ccc" stroke-width="0.7" stroke-dasharray="2,2"/>
+                            <line x1="0" y1="100" x2="100" y2="0" stroke="#ccc" stroke-width="0.7" stroke-dasharray="2,2"/>
+                        </svg>
+                    </div>
+                    </div>
+                <div class="practice-grids">
+                    <div class="practice-row">
+                        {% for i in range(practice_per_line) %}
+                            <div class="practice-item">
+                                <svg class="grid" width="{{ grid_px }}" height="{{ grid_px }}" viewBox="0 0 100 100">
+                                    <rect x="0" y="0" width="100" height="100" fill="none" stroke="#444" stroke-width="1.6"/>
+                                    <line x1="50" y1="0" x2="50" y2="100" stroke="#aaa" stroke-width="0.9" stroke-dasharray="4,2" opacity="0.95"/>
+                                    <line x1="0" y1="50" x2="100" y2="50" stroke="#aaa" stroke-width="0.9" stroke-dasharray="4,2" opacity="0.95"/>
+                                    <line x1="0" y1="0" x2="100" y2="100" stroke="#ccc" stroke-width="0.7" stroke-dasharray="2,2" opacity="0.8"/>
+                                    <line x1="0" y1="100" x2="100" y2="0" stroke="#ccc" stroke-width="0.7" stroke-dasharray="2,2" opacity="0.8"/>
+                                </svg>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+
+</body>
+</html>
+

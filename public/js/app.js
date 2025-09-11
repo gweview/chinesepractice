@@ -8,7 +8,12 @@ class CharacterSelector {
 
     async init() {
         this.initializeElements();
-        await this.fetchCharacters();
+        const ok = await this.fetchCharacters();
+        if (!ok) {
+            // 失败时仅隐藏加载层并停止后续渲染，避免清空错误提示
+            this.hideLoader();
+            return;
+        }
         this.renderCharGrid();
         this.bindEvents();
         this.restoreState(); // 确保在绑定事件后调用
@@ -44,12 +49,21 @@ class CharacterSelector {
 
     async fetchCharacters() {
         try {
-            const response = await fetch('/api/chars');
-            if (!response.ok) throw new Error('Failed to fetch characters');
-            this.allChars = await response.json();
+            const response = await fetch('/api/chars', { headers: { 'Accept': 'application/json' } });
+            if (!response.ok) throw new Error('Failed to fetch characters: ' + response.status);
+            const data = await response.json();
+            if (!Array.isArray(data) || data.length === 0) {
+                throw new Error('Empty or invalid character data');
+            }
+            this.allChars = data;
+            return true;
         } catch (error) {
             console.error('Error fetching characters:', error);
-            this.charGrid.innerHTML = '<p style="color: red; text-align: center;">汉字加载失败，请刷新页面重试。</p>';
+            this.allChars = [];
+            if (this.charGrid) {
+                this.charGrid.innerHTML = '<p style="color: red; text-align: center;">汉字加载失败或数据为空，请刷新页面或稍后重试。</p>';
+            }
+            return false;
         }
     }
 
@@ -304,7 +318,7 @@ class CharacterSelector {
     }
 
     addCustomCharacters() {
-        const val = (this.customInput?.value || '').trim();
+        const val = ((this.customInput && this.customInput.value) || '').trim();
         if (!val) return;
         
         const chars = Array.from(val.replace(/[
@@ -313,8 +327,7 @@ class CharacterSelector {
         
         for (const ch of chars) {
             if (this.selectedChars.length >= this.maxSelection) break;
-            if (!ch || !/^[
-\p{sc=Han}\p{N}\p{L}\p{P}]$/u.test(ch)) continue;
+            if (!ch || !/^[\u4E00-\u9FFFa-zA-Z0-9.,;，。、《》〈〉\-_/|\\]$/u.test(ch)) continue;
             
             if (!this.selectedChars.some(c => c.char === ch)) {
                 this.selectedChars.push({ char: ch, lines: 1 });

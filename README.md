@@ -10,11 +10,24 @@
 ## 预览
 - 首页选择汉字与排版选项，点击“打印练字帖”在新窗口生成打印版式。
 
-## 本地运行
+## 本地运行（Flask 版本，推荐）
 ```
-npm ci   # 或 npm i
-npm start
+# 进入项目根目录 chinesepractice/
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# 开发运行（默认端口 3000，可用 PORT 覆盖）
+python app.py
 # 访问 http://localhost:3000
+```
+
+后端栈：Flask + Jinja2。静态资源仍位于 `public/`，通过 Flask 静态路由以 `/static/css/...`、`/static/js/...` 提供（模板已用 `url_for('static', ...)` 自动生成路径）。
+
+如需继续使用旧的 Node/Express 版本（不推荐，仅兼容保留）：
+```
+npm i
+npm run start:node
 ```
 
 ## 主要脚本
@@ -22,11 +35,13 @@ npm start
 
 ## 目录结构
 ```
-new-app/
-  public/        # 前端静态资源(css/js)
-  views/         # EJS 模板（首页）
-  data/          # 常用汉字列表
-  server.js      # Express 启动与路由
+chinesepractice/
+  public/          # 前端静态资源(css/js)
+  templates/       # Jinja2 模板（index/print）
+  data/            # 常用汉字列表（JS 数组）
+  app.py           # Flask 应用入口（开发）
+  requirements.txt # Python 依赖
+  server.js        # 旧版 Express 启动与路由（可选）
 ```
 
 ## 功能要点
@@ -35,8 +50,25 @@ new-app/
 - 静态资源带缓存头；Express 隐藏 X-Powered-By。
 
 ## 部署
-- 支持 Node.js 18+。
-- 生产环境可使用任何支持 Node 的平台（Vercel/Render/自有服务器等）。
+- Python 3.11+；建议用 Gunicorn 作为生产 WSGI 守护。
+- 示例：`gunicorn -w 2 -b 0.0.0.0:3000 'app:app'`
+
+## Docker 方式
+```
+cd chinesepractice
+docker build -t chinesepractice:latest .
+docker run --rm -it -p 3000:3000 chinesepractice:latest
+# 访问 http://localhost:3000
+```
+
+## 使用 npm 启动（调用 Python）
+在某些场景你可能希望仍通过 npm 统一启动命令：
+```
+cd chinesepractice
+npm start           # 等价于 python3 app.py
+npm run start:flask # 同上
+npm run start:node  # 旧版 Node/Express 启动
+```
 
 ## 发布到 GitHub
 1. 在 GitHub 新建一个空仓库（不要初始化 README）。

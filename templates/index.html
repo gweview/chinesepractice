@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="从1000个常用汉字中选择，生成适合儿童的汉字米字格练字帖，支持不同排版并可直接打印。">
+    <title>汉字练字帖生成器</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=version) }}">
+</head>
+<body>
+    <div id="loader-overlay">
+        <div class="loader-animal">🐼</div>
+        <p>汉字宝宝们正在排队...</p>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>汉字练字帖生成器</h1>
+            <p>从1000个常用汉字中选择10个以内的汉字，生成练字帖</p>
+        </header>
+
+        <main>
+            <div class="selection-area">
+                <div class="selected-chars">
+                    <h3>已选择的汉字 (<span id="selected-count">0</span>/10):</h3>
+                    <div id="selected-display" class="selected-display"></div>
+                    <div class="custom-input-row">
+                        <label for="custom-input">自定义输入：</label>
+                        <input id="custom-input" type="text" maxlength="50" placeholder="直接输入要练习的字，如：春夏秋冬" autocomplete="off" />
+                        <button id="add-custom" type="button">添加到选择</button>
+                        <span class="hint">支持一次输入多个字，将按顺序加入（最多10个）</span>
+                    </div>
+                    <div class="layout-options">
+                        <label for="grid-size">字大小:</label>
+                        <select id="grid-size">
+                            <option value="large">大字（每行6个格）</option>
+                            <option value="medium" selected>中字（每行8个格）</option>
+                            <option value="small">小字（每行10个格）</option>
+                        </select>
+                        <span class="hint">每个字固定练习 1 行</span>
+                    </div>
+                    <div class="print-options">
+                        <label class="checkbox">
+                            <input id="use-animals" type="checkbox" checked />
+                            打印页顶使用可爱动物装饰（替代标题）
+                        </label>
+                    </div>
+                    <div class="action-buttons">
+                        <button id="clear-all" type="button">清空所有</button>
+                        <button id="print-direct" type="button" disabled>打印练字帖</button>
+                    </div>
+                </div>
+
+                <div class="search-area">
+                    <input type="text" id="search-input" placeholder="搜索汉字（支持直接点击下方汉字选择/取消）..." autocomplete="off">
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all">全部</button>
+                        <button class="filter-btn" data-filter="basic">基础汉字</button>
+                        <button class="filter-btn" data-filter="common">常用汉字</button>
+                    </div>
+                </div>
+
+                <div class="char-grid" id="char-grid">
+                    <!-- Rendered dynamically by app.js -->
+                </div>
+
+                <div class="pagination" id="pagination">
+                    <button id="prev-page" class="page-btn" type="button">上一页</button>
+                    <span id="page-info" class="page-info">第 1/1 页</span>
+                    <button id="next-page" class="page-btn" type="button">下一页</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js', v=version) }}"></script>
+    <script>
+      // 兜底：若主脚本未能隐藏加载层，则在页面加载后强制隐藏
+      window.addEventListener('load', function () {
+        var loader = document.getElementById('loader-overlay');
+        if (loader) loader.classList.add('hidden');
+      });
+    </script>
+</body>
+</html>
